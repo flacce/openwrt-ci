@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-    - name: Check Server Performance(检查服务器性能)
+    - name: 🧐 检查服务器性能
       run: |
         echo "警告⚠"
         echo "分配的服务器性能有限，若选择的插件过多，务必注意CPU性能！"
@@ -36,7 +36,7 @@ jobs:
         echo "--------------------------硬盘信息--------------------------"
         echo "硬盘数量：$(ls /dev/sd* | grep -v [1-9] | wc -l)" && df -hT
 
-    - name: Initialization Environment(初始化环境)
+    - name: 🛠️ 初始化环境
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
@@ -47,17 +47,17 @@ jobs:
         sudo -E apt-get -y clean
         sudo timedatectl set-timezone "$TZ"
 
-    - name: Combine Disks(合并磁盘)
+    - name: 💾 合并磁盘
       uses: easimon/maximize-build-space@master
       with:
         swap-size-mb: 1024
         temp-reserve-mb: 100
         root-reserve-mb: 1024
 
-    - name: Checkout
+    - name: 🛒 检出代码
       uses: actions/checkout@main
 
-    - name: Clone Source Code(克隆源代码)
+    - name: 📥 克隆源代码
       run: |
         df -hT $GITHUB_WORKSPACE
         git clone --depth 1 -b $REPO_BRANCH $REPO_URL openwrt
@@ -68,7 +68,7 @@ jobs:
         VERSION_KERNEL=$(grep -oP 'LINUX_KERNEL_HASH-\K[0-9]+\.[0-9]+\.[0-9]+' target/linux/generic/kernel-6.12)
         echo "VERSION_KERNEL=$VERSION_KERNEL" >> $GITHUB_ENV
 
-    - name: Generate Variables(生成变量)
+    - name: 📝 生成变量
       run: |
         cp $CONFIG_FILE $OPENWRT_PATH/.config
         cd $OPENWRT_PATH
@@ -80,7 +80,7 @@ jobs:
         DEVICE_SUBTARGET=$(cat .config | grep CONFIG_TARGET_SUBTARGET | awk -F '"' '{print $2}')
         echo "DEVICE_SUBTARGET=$DEVICE_SUBTARGET" >> $GITHUB_ENV
 
-    - name: Cache Toolchain(缓存工具链)
+    - name: ⚡ 缓存工具链
       if: env.CACHE_TOOLCHAIN == 'true'
       uses: HiGarfield/cachewrtbuild@main
       with:
@@ -88,7 +88,7 @@ jobs:
         mixkey: ${{ env.SOURCE_REPO }}-${{ env.REPO_BRANCH }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}
         prefix: ${{ env.OPENWRT_PATH }}
     
-    - name: Install Feeds(安装feeds)
+    - name: 📦 安装 Feeds
       run: |
         cd $OPENWRT_PATH
         ./scripts/feeds update -a
@@ -98,7 +98,7 @@ jobs:
         rm -rf package/new/custom
         ./scripts/feeds install -a
   
-    - name: Load Custom Configuration(加载自定义配置)
+    - name: ⚙️ 加载自定义配置
       run: |
         [ -e files ] && mv files $OPENWRT_PATH/files
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE $OPENWRT_PATH/.config
@@ -106,7 +106,7 @@ jobs:
         cd $OPENWRT_PATH
         $GITHUB_WORKSPACE/$DIY_SCRIPT
 
-    - name: Download DL Package(下载DL软件包)
+    - name: ⏬ 下载依赖软件包
       run: |
         cd $OPENWRT_PATH
         make defconfig
@@ -114,7 +114,7 @@ jobs:
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
 
-    - name: Compile Firmware(开始编译固件)
+    - name: 🚀 开始编译固件
       id: compile
       run: |
         cd $OPENWRT_PATH
@@ -124,18 +124,18 @@ jobs:
         echo "DATE=$(date +"%Y-%m-%d %H:%M:%S")" >> $GITHUB_ENV
         echo "FILE_DATE=$(date +"%Y.%m.%d")" >> $GITHUB_ENV
 
-    - name: Check Space Usage(检查空间使用情况)
+    - name: 🗑️ 检查空间使用情况
       if: (!cancelled())
       run: df -hT
 
-    - name: Upload Bin Directory(上传固件)
+    - name: 📤 上传 Bin 目录
       if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
       uses: actions/upload-artifact@main
       with:
         name: ${{ env.SOURCE_REPO }}-bin-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.FILE_DATE }}
         path: ${{ env.OPENWRT_PATH }}/bin
 
-    - name: Organize Files(整理文件)
+    - name: 🗂️ 整理文件
       if: steps.compile.outputs.status == 'success'
       run: |
         cd $OPENWRT_PATH/bin/targets/*/*
@@ -146,21 +146,21 @@ jobs:
         rm -rf packages feeds.buildinfo version.buildinfo
         echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
 
-    - name: Generate Plugin List(生成插件列表)
+    - name: 🧾 生成插件列表
       id: plugin_list
       if: steps.compile.outputs.status == 'success'
       run: |
         cd ${{ env.FIRMWARE_PATH }}
         echo "list=$(grep -E 'CONFIG_PACKAGE_.*=[ym]' build.config | sed -e 's/CONFIG_PACKAGE_//' -e 's/=[ym]$//' | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_OUTPUT
 
-    - name: Upload Firmware To Artifact(将固件上传到Artifact)
+    - name: 📦 上传固件到 Artifact
       if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE != 'true'
       uses: actions/upload-artifact@main
       with:
         name: ${{ env.SOURCE_REPO }}-firmware-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE_PATH }}
 
-    - name: Upload Firmware To Release(发布固件)
+    - name: 🎉 发布固件
       if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE == 'true'
       uses: ncipollo/release-action@v1
       with:
