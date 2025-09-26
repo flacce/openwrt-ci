@@ -146,6 +146,13 @@ jobs:
         rm -rf packages feeds.buildinfo version.buildinfo
         echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
 
+    - name: Generate Plugin List(生成插件列表)
+      id: plugin_list
+      if: steps.compile.outputs.status == 'success'
+      run: |
+        cd ${{ env.FIRMWARE_PATH }}
+        echo "list=$(grep -E 'CONFIG_PACKAGE_.*=[ym]' build.config | sed -e 's/CONFIG_PACKAGE_//' -e 's/=[ym]$//' | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_OUTPUT
+
     - name: Upload Firmware To Artifact(将固件上传到Artifact)
       if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE != 'true'
       uses: actions/upload-artifact@main
@@ -169,9 +176,11 @@ jobs:
           - 💻 这是 ${{ env.FIRMWARE_TAG }} 平台使用的 OpenWrt 固件
           - ⚽ 固件源码: ${{ env.REPO_URL }}
           - 💝 源码分支: ${{ env.REPO_BRANCH }}
-          - 🌐 默认地址: 192.168.1.1
-          - 🔑 默认密码: password
+          - 🌐 默认地址: 10.0.0.1
+          - 🔑 默认密码: 无
           ### 🧊 固件版本
           - 固件内核版本：${{ env.VERSION_KERNEL }}
           - 固件编译前最后一次➦[主源码](${{ env.REPO_URL }})更新记录
           - ${{ env.VERSION_INFO }}
+          ### 📦 已编译插件
+          `${{ steps.plugin_list.outputs.list }}`
