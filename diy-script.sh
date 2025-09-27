@@ -12,16 +12,6 @@ sed -i 's/root:.*:/root::/g' package/base-files/files/etc/shadow
 # TTYD 免登录
 # sed -i 's|/bin/login|/bin/login -f root|g' feeds/packages/utils/ttyd/files/ttyd.config
 
-# 移除要替换的包
-rm -rf feeds/packages/net/mosdns
-rm -rf feeds/packages/net/msd_lite
-rm -rf feeds/packages/net/smartdns
-rm -rf feeds/luci/themes/luci-theme-argon
-rm -rf feeds/luci/themes/luci-theme-netgear
-rm -rf feeds/luci/applications/luci-app-mosdns
-rm -rf feeds/luci/applications/luci-app-netdata
-rm -rf feeds/luci/applications/luci-app-serverchan
-
 # Git稀疏克隆，只克隆指定目录到本地
 function git_sparse_clone() {
   branch="$1" repourl="$2" && shift 2
@@ -56,7 +46,7 @@ UPDATE_PACKAGE() {
 				echo "Delete directory: $DIR"
 			done <<< "$FOUND_DIRS"
 		else
-			echo "Not fonud directory: $NAME"
+			echo "Not found directory: $NAME"
 		fi
 	done
 
@@ -65,18 +55,57 @@ UPDATE_PACKAGE() {
 
 	# 处理克隆的仓库
 	if [[ "$PKG_SPECIAL" == "pkg" ]]; then
-		find ./$REPO_NAME/*/ -maxdepth 3 -type d -iname "*$PKG_NAME*" -prune -exec cp -rf {} ./ \;
+		# 修正find命令以正确查找位于仓库根目录下的插件
+		find ./$REPO_NAME -maxdepth 2 -type d -iname "*$PKG_NAME*" -prune -exec cp -rf {} ./ \;
 		rm -rf ./$REPO_NAME/
 	elif [[ "$PKG_SPECIAL" == "name" ]]; then
 		mv -f $REPO_NAME $PKG_NAME
 	fi
 }
 
-# 添加额外插件
-git clone --depth=1 https://github.com/kongfl888/luci-app-adguardhome package/luci-app-adguardhome &
-git clone --depth=1 -b openwrt-18.06 https://github.com/tty228/luci-app-wechatpush package/luci-app-serverchan &
-git clone --depth=1 https://github.com/ilxp/luci-app-ikoolproxy package/luci-app-ikoolproxy &
-git clone --depth=1 https://github.com/esirplayground/luci-app-poweroff package/luci-app-poweroff &
+# 更新软件包版本函数
+UPDATE_VERSION() {
+    local PKG_NAME=$1
+    local PKG_MARK=${2:-false}
+    local PKG_FILES=$(find ./ ../feeds/packages/ -maxdepth 3 -type f -wholename "*/$PKG_NAME/Makefile")
+
+    if [ -z "$PKG_FILES" ]; then
+        echo "$PKG_NAME not found!"
+        return
+    fi
+
+    echo -e "\n$PKG_NAME version update has started!"
+
+    for PKG_FILE in $PKG_FILES; do
+        local PKG_REPO=$(grep -Po "PKG_SOURCE_URL:=https://.*github.com/\K[^/]+/[^/]+(?=.*)" $PKG_FILE)
+        local PKG_TAG=$(curl -sL "https://api.github.com/repos/$PKG_REPO/releases" | jq -r "map(select(.prerelease == $PKG_MARK)) | first | .tag_name")
+        local OLD_VER=$(grep -Po "PKG_VERSION:=\K.*" "$PKG_FILE")
+        local OLD_URL=$(grep -Po "PKG_SOURCE_URL:=\K.*" "$PKG_FILE")
+        local OLD_FILE=$(grep -Po "PKG_SOURCE:=\K.*" "$PKG_FILE")
+        local OLD_HASH=$(grep -Po "PKG_HASH:=\K.*" "$PKG_FILE")
+        local PKG_URL=$([[ "$OLD_URL" == *"releases"* ]] && echo "${OLD_URL%/}/$OLD_FILE" || echo "${OLD_URL%/}")
+        local NEW_VER=$(echo $PKG_TAG | sed -E 's/[^0-9]+/\\. /g; s/^\. |\.$//g')
+        local NEW_URL=$(echo $PKG_URL | sed "s/\$\(PKG_VERSION\)/$NEW_VER/g; s/\$\(PKG_NAME\)/$PKG_NAME/g")
+        local NEW_HASH=$(curl -sL "$NEW_URL" | sha256sum | cut -d ' ' -f 1)
+
+        echo "old version: $OLD_VER $OLD_HASH"
+        echo "new version: $NEW_VER $NEW_HASH"
+
+        if [[ "$NEW_VER" =~ ^[0-9].* ]] && dpkg --compare-versions "$OLD_VER" lt "$NEW_VER"; then
+            sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=$NEW_VER/g" "$PKG_FILE"
+            sed -i "s/PKG_HASH:=.*/PKG_HASH:=$NEW_HASH/g" "$PKG_FILE"
+            echo "$PKG_FILE version has been updated!"
+        else
+            echo "$PKG_FILE version is already the latest!"
+        fi
+    done
+}
+
+# 添加额外插件（已统一为UPDATE_PACKAGE方式）
+UPDATE_PACKAGE "luci-app-adguardhome" "kongfl888/luci-app-adguardhome" "master" &
+UPDATE_PACKAGE "luci-app-serverchan" "tty228/luci-app-wechatpush" "openwrt-18.06" &
+UPDATE_PACKAGE "luci-app-ikoolproxy" "ilxp/luci-app-ikoolproxy" "master" &
+UPDATE_PACKAGE "luci-app-poweroff" "esirplayground/luci-app-poweroff" "master" &
 git_sparse_clone main https://github.com/Lienol/openwrt-package luci-app-filebrowser luci-app-ssr-mudb-server &
 git_sparse_clone openwrt-18.06 https://github.com/immortalwrt/luci applications/luci-app-eqos &
 # git_sparse_clone master https://github.com/syb999/openwrt-19.07.1 package/network/services/msd_lite &
@@ -86,9 +115,9 @@ UPDATE_PACKAGE "argon" "sbwml/luci-theme-argon" "openwrt-24.10"
 UPDATE_PACKAGE "kucat" "sirpdboy/luci-theme-kucat" "js"
 
 # 添加其他主题
-git clone --depth=1 -b 18.06 https://github.com/kiddin9/luci-theme-edge package/luci-theme-edge &
-git clone --depth=1 https://github.com/jerrykuku/luci-app-argon-config package/luci-app-argon-config &
-git clone --depth=1 https://github.com/xiaoqingfengATGH/luci-theme-infinityfreedom package/luci-theme-infinityfreedom &
+UPDATE_PACKAGE "luci-theme-edge" "kiddin9/luci-theme-edge" "18.06" &
+UPDATE_PACKAGE "luci-app-argon-config" "jerrykuku/luci-app-argon-config" "master" &
+UPDATE_PACKAGE "luci-theme-infinityfreedom" "xiaoqingfengATGH/luci-theme-infinityfreedom" "master" &
 git_sparse_clone main https://github.com/haiibo/packages luci-theme-atmaterial luci-theme-opentomcat luci-theme-netgear &
 
 # 使用 UPDATE_PACKAGE 函数添加科学上网插件
@@ -122,34 +151,25 @@ UPDATE_PACKAGE "OpenAppFilter" "destan19/OpenAppFilter" "master" "" "open-app-fi
 wait
 
 # 更改 Argon 主题背景
-cp -f $GITHUB_WORKSPACE/images/bg1.jpg package/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
+# 修正路径，使其不依赖 $GITHUB_WORKSPACE，而是相对于 build root
+if [ -f "../images/bg1.jpg" ]; then
+    cp -f ../images/bg1.jpg package/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
+fi
 
 # msd_lite
-git clone --depth=1 https://github.com/ximiTech/luci-app-msd_lite package/luci-app-msd_lite &
-git clone --depth=1 https://github.com/ximiTech/msd_lite package/msd_lite &
+UPDATE_PACKAGE "luci-app-msd_lite" "ximiTech/luci-app-msd_lite" "master" &
+UPDATE_PACKAGE "msd_lite" "ximiTech/msd_lite" "master" &
 
 # 在线用户
 git_sparse_clone main https://github.com/haiibo/packages luci-app-onliner &
 
 wait
 
-sed -i '$i uci set nlbwmon.@nlbwmon[0].refresh_interval=2s' package/lean/default-settings/files/zzz-default-settings
-sed -i '$i uci commit nlbwmon' package/lean/default-settings/files/zzz-default-settings
-chmod 755 package/luci-app-onliner/root/usr/share/onliner/setnlbw.sh
-
-# x86 型号只显示 CPU 型号
-sed -i 's/${g}.*/${a}${b}${c}${d}${e}${f}${hydrid}/g' package/lean/autocore/files/x86/autocore
-
-# 修改本地时间格式
-sed -i 's/os.date()/os.date("%a %Y-%m-%d %H:%M:%S")/g' package/lean/autocore/files/*/index.htm
-
-# 修改版本为编译日期
-date_version=$(date +"%y.%m.%d")
-orig_version=$(cat "package/lean/default-settings/files/zzz-default-settings" | grep DISTRIB_REVISION= | awk -F "'" '{print $2}')
-sed -i "s/${orig_version}/R${date_version} by Haiibo/g" package/lean/default-settings/files/zzz-default-settings
-
 # 修复 hostapd 报错
-cp -f $GITHUB_WORKSPACE/scripts/011-fix-mbo-modules-build.patch package/network/services/hostapd/patches/011-fix-mbo-modules-build.patch
+# 修正路径，使其不依赖 $GITHUB_WORKSPACE，而是相对于 build root
+if [ -f "../scripts/011-fix-mbo-modules-build.patch" ]; then
+    cp -f ../scripts/011-fix-mbo-modules-build.patch package/network/services/hostapd/patches/011-fix-mbo-modules-build.patch
+fi
 
 # 修复 armv8 设备 xfsprogs 报错
 sed -i 's/TARGET_CFLAGS.*/TARGET_CFLAGS += -DHAVE_MAP_SYNC -D_LARGEFILE64_SOURCE/g' feeds/packages/utils/xfsprogs/Makefile
@@ -163,5 +183,10 @@ find package/*/ -maxdepth 2 -path "*/Makefile" | xargs -i sed -i 's/PKG_SOURCE_U
 # 取消主题默认设置
 find package/luci-theme-*/* -type f -name '*luci-theme-*' -print -exec sed -i '/set luci.main.mediaurlbase/d' {} \;
 
+# 可选：调用 UPDATE_VERSION 函数自动更新软件包版本
+# 使用方法：UPDATE_VERSION "软件包名" "是否更新到测试版(true/false)"
+# UPDATE_VERSION "sing-box"
+# UPDATE_VERSION "tailscale" true
+UPDATE_VERSION "sing-box" "true"
 ./scripts/feeds update -a
 ./scripts/feeds install -a

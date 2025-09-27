@@ -9,7 +9,7 @@ env:
   REPO_URL: https://github.com/LiBwrt/openwrt-6.x.git
   REPO_BRANCH: k6.12-nss
   CONFIG_FILE: configs/ipq60xx-6.12-wifi.config
-  DIY_SCRIPT: libwrt.sh
+  DIY_SCRIPT: diy-script.sh
   CLASH_KERNEL: amd64
   CACHE_TOOLCHAIN: true
   UPLOAD_BIN_DIR: false
@@ -91,12 +91,10 @@ jobs:
     - name: 📦 安装 Feeds
       run: |
         cd $OPENWRT_PATH
-        ./scripts/feeds update -a
         git clone --depth 1 https://github.com/sbwml/openwrt_pkgs.git package/new/custom
         mv package/new/custom/luci-app-netspeedtest  package/new
         mv package/new/custom/speedtest-cli package/new
         rm -rf package/new/custom
-        ./scripts/feeds install -a
   
     - name: ⚙️ 加载自定义配置
       run: |
@@ -151,7 +149,7 @@ jobs:
       if: steps.compile.outputs.status == 'success'
       run: |
         cd ${{ env.FIRMWARE_PATH }}
-        echo "list=$(grep -E 'CONFIG_PACKAGE_.*=[ym]' build.config | sed -e 's/CONFIG_PACKAGE_//' -e 's/=[ym]$//' | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_OUTPUT
+        echo "list=$(grep -E 'CONFIG_PACKAGE_luci-app-.*=[ym]' build.config | sed -e 's/CONFIG_PACKAGE_//' -e 's/=[ym]$//' | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_OUTPUT
 
     - name: 📦 上传固件到 Artifact
       if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE != 'true'
