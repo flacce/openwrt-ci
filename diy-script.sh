@@ -32,27 +32,92 @@ function git_sparse_clone() {
   cd .. && rm -rf $repodir
 }
 
+# 更新或添加软件包函数
+UPDATE_PACKAGE() {
+	local PKG_NAME=$1
+	local PKG_REPO=$2
+	local PKG_BRANCH=$3
+	local PKG_SPECIAL=$4
+	local PKG_LIST=("$PKG_NAME" $5)  # 第5个参数为自定义名称列表
+	local REPO_NAME=${PKG_REPO#*/}
+
+	echo " "
+
+	# 删除本地可能存在的不同名称的软件包
+	for NAME in "${PKG_LIST[@]}"; do
+		# 查找匹配的目录
+		echo "Search directory: $NAME"
+		local FOUND_DIRS=$(find ../feeds/luci/ ../feeds/packages/ -maxdepth 3 -type d -iname "*$NAME*" 2>/dev/null)
+
+		# 删除找到的目录
+		if [ -n "$FOUND_DIRS" ]; then
+			while read -r DIR; do
+				rm -rf "$DIR"
+				echo "Delete directory: $DIR"
+			done <<< "$FOUND_DIRS"
+		else
+			echo "Not fonud directory: $NAME"
+		fi
+	done
+
+	# 克隆 GitHub 仓库
+	git clone --depth=1 --single-branch --branch $PKG_BRANCH "https://github.com/$PKG_REPO.git"
+
+	# 处理克隆的仓库
+	if [[ "$PKG_SPECIAL" == "pkg" ]]; then
+		find ./$REPO_NAME/*/ -maxdepth 3 -type d -iname "*$PKG_NAME*" -prune -exec cp -rf {} ./ \;
+		rm -rf ./$REPO_NAME/
+	elif [[ "$PKG_SPECIAL" == "name" ]]; then
+		mv -f $REPO_NAME $PKG_NAME
+	fi
+}
+
 # 添加额外插件
 git clone --depth=1 https://github.com/kongfl888/luci-app-adguardhome package/luci-app-adguardhome &
 git clone --depth=1 -b openwrt-18.06 https://github.com/tty228/luci-app-wechatpush package/luci-app-serverchan &
 git clone --depth=1 https://github.com/ilxp/luci-app-ikoolproxy package/luci-app-ikoolproxy &
 git clone --depth=1 https://github.com/esirplayground/luci-app-poweroff package/luci-app-poweroff &
-git clone --depth=1 https://github.com/destan19/OpenAppFilter package/OpenAppFilter &
-git clone --depth=1 https://github.com/Jason6111/luci-app-netdata package/luci-app-netdata &
-git clone --depth=1 https://github.com/EasyTier/luci-app-easytier.git package/luci-app-easytier &
 git_sparse_clone main https://github.com/Lienol/openwrt-package luci-app-filebrowser luci-app-ssr-mudb-server &
 git_sparse_clone openwrt-18.06 https://github.com/immortalwrt/luci applications/luci-app-eqos &
 # git_sparse_clone master https://github.com/syb999/openwrt-19.07.1 package/network/services/msd_lite &
 
-# 科学上网插件
-git clone --depth=1 https://github.com/VIKINGYFY/homeproxy package/luci-app-homeproxy &
+# 使用 UPDATE_PACKAGE 函数添加主题
+UPDATE_PACKAGE "argon" "sbwml/luci-theme-argon" "openwrt-24.10"
+UPDATE_PACKAGE "kucat" "sirpdboy/luci-theme-kucat" "js"
 
-# Themes
+# 添加其他主题
 git clone --depth=1 -b 18.06 https://github.com/kiddin9/luci-theme-edge package/luci-theme-edge &
-git clone --depth=1 -b 18.06 https://github.com/jerrykuku/luci-theme-argon package/luci-theme-argon &
 git clone --depth=1 https://github.com/jerrykuku/luci-app-argon-config package/luci-app-argon-config &
 git clone --depth=1 https://github.com/xiaoqingfengATGH/luci-theme-infinityfreedom package/luci-theme-infinityfreedom &
 git_sparse_clone main https://github.com/haiibo/packages luci-theme-atmaterial luci-theme-opentomcat luci-theme-netgear &
+
+# 使用 UPDATE_PACKAGE 函数添加科学上网插件
+UPDATE_PACKAGE "homeproxy" "VIKINGYFY/homeproxy" "main"
+UPDATE_PACKAGE "momo" "nikkinikki-org/OpenWrt-momo" "main"
+UPDATE_PACKAGE "nikki" "nikkinikki-org/OpenWrt-nikki" "main"
+UPDATE_PACKAGE "openclash" "vernesong/OpenClash" "dev" "pkg"
+UPDATE_PACKAGE "passwall" "xiaorouji/openwrt-passwall" "main" "pkg"
+UPDATE_PACKAGE "passwall2" "xiaorouji/openwrt-passwall2" "main" "pkg"
+
+# 使用 UPDATE_PACKAGE 函数添加其他应用
+UPDATE_PACKAGE "luci-app-tailscale" "asvow/luci-app-tailscale" "main"
+UPDATE_PACKAGE "ddns-go" "sirpdboy/luci-app-ddns-go" "main"
+UPDATE_PACKAGE "diskman" "lisaac/luci-app-diskman" "master"
+UPDATE_PACKAGE "easytier" "EasyTier/luci-app-easytier" "main"
+UPDATE_PACKAGE "fancontrol" "rockjake/luci-app-fancontrol" "main"
+UPDATE_PACKAGE "gecoosac" "lwb1978/openwrt-gecoosac" "main"
+UPDATE_PACKAGE "mosdns" "sbwml/luci-app-mosdns" "v5" "" "v2dat"
+UPDATE_PACKAGE "netspeedtest" "sirpdboy/luci-app-netspeedtest" "js" "" "homebox speedtest"
+UPDATE_PACKAGE "openlist2" "sbwml/luci-app-openlist2" "main"
+UPDATE_PACKAGE "partexp" "sirpdboy/luci-app-partexp" "main"
+UPDATE_PACKAGE "qbittorrent" "sbwml/luci-app-qbittorrent" "master" "" "qt6base qt6tools rblibtorrent"
+UPDATE_PACKAGE "qmodem" "FUjr/QModem" "main"
+UPDATE_PACKAGE "quickfile" "sbwml/luci-app-quickfile" "main"
+UPDATE_PACKAGE "viking" "VIKINGYFY/packages" "main" "" "luci-app-timewol luci-app-wolplus"
+UPDATE_PACKAGE "vnt" "lmq8267/luci-app-vnt" "main"
+
+# 使用 UPDATE_PACKAGE 函数添加 OpenAppFilter
+UPDATE_PACKAGE "OpenAppFilter" "destan19/OpenAppFilter" "master" "" "open-app-filter luci-app-appfilter oaf"
 
 wait
 
@@ -62,9 +127,6 @@ cp -f $GITHUB_WORKSPACE/images/bg1.jpg package/luci-theme-argon/htdocs/luci-stat
 # msd_lite
 git clone --depth=1 https://github.com/ximiTech/luci-app-msd_lite package/luci-app-msd_lite &
 git clone --depth=1 https://github.com/ximiTech/msd_lite package/msd_lite &
-
-# MosDNS
-git clone --depth=1 https://github.com/sbwml/luci-app-mosdns package/luci-app-mosdns &
 
 # 在线用户
 git_sparse_clone main https://github.com/haiibo/packages luci-app-onliner &
