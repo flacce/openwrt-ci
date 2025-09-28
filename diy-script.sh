@@ -3,8 +3,8 @@
 # 修改默认IP
 sed -i 's/192.168.1.1/10.0.0.1/g' package/base-files/files/bin/config_generate
 
-# 清除默认密码
-sed -i 's/root:.*:/root::/g' package/base-files/files/etc/shadow
+# 设置默认密码为 password
+sed -i 's/root:.*:/root:$1$V4UetPzk$CYXluq4wUazHjmCDBCqXF.:0:0:99999:7:::/g' package/base-files/files/etc/shadow
 
 # 更改默认 Shell 为 zsh
 # sed -i 's/\/bin\/ash/\/usr\/bin\/zsh/g' package/base-files/files/etc/passwd
@@ -21,6 +21,9 @@ rm -rf feeds/luci/themes/luci-theme-netgear
 rm -rf feeds/luci/applications/luci-app-mosdns
 rm -rf feeds/luci/applications/luci-app-netdata
 rm -rf feeds/luci/applications/luci-app-serverchan
+rm -rf feeds/packages/utils/domoticz
+rm -rf feeds/packages/net/i2pd
+rm -rf feeds/packages/net/kea
 
 # Git稀疏克隆，只克隆指定目录到本地
 function git_sparse_clone() {
