@@ -160,12 +160,11 @@ jobs:
 
     - name: 🧹 清理旧的 Release
       if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE == 'true'
-      uses: munna/delete-older-releases@v1.1.0
+      uses: tag-based-release-management/delete-older-releases@v1
       with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag_regex: ^${{ env.FIRMWARE_TAG }}-.*
         keep_latest: 3
-        release_name_regex: for ${{ env.FIRMWARE_TAG }}$
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: 🎉 发布固件
       if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE == 'true'
