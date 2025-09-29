@@ -160,11 +160,13 @@ jobs:
 
     - name: 🧹 清理旧的 Release
       if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE == 'true'
-      uses: tag-based-release-management/delete-older-releases@v1
+      uses: dev-drprasad/delete-older-releases@v0.3.4
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        tag_regex: ^${{ env.FIRMWARE_TAG }}-.*
+        repo: ${{ github.repository }}
         keep_latest: 3
+        delete_tag_pattern: ${{ env.FIRMWARE_TAG }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: 🎉 发布固件
       if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE == 'true'
