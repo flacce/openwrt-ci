@@ -42,15 +42,15 @@ git clone --depth=1 https://github.com/destan19/OpenAppFilter package/OpenAppFil
 git clone --depth=1 https://github.com/Jason6111/luci-app-netdata package/luci-app-netdata &
 git clone --depth=1 https://github.com/EasyTier/luci-app-easytier.git package/luci-app-easytier &
 git_sparse_clone main https://github.com/Lienol/openwrt-package luci-app-filebrowser luci-app-ssr-mudb-server &
-git_sparse_clone openwrt-18.06 https://github.com/immortalwrt/luci applications/luci-app-eqos &
+git_sparse_clone master https://github.com/immortalwrt/luci applications/luci-app-eqos &
 # git_sparse_clone master https://github.com/syb999/openwrt-19.07.1 package/network/services/msd_lite &
 
 # 科学上网插件
 git clone --depth=1 https://github.com/VIKINGYFY/homeproxy package/luci-app-homeproxy &
 
 # Themes
-git clone --depth=1 -b 18.06 https://github.com/kiddin9/luci-theme-edge package/luci-theme-edge &
-git clone --depth=1 -b 18.06 https://github.com/jerrykuku/luci-theme-argon package/luci-theme-argon &
+git clone --depth=1 -b master https://github.com/kiddin9/luci-theme-edge package/luci-theme-edge &
+git clone --depth=1 -b master https://github.com/jerrykuku/luci-theme-argon package/luci-theme-argon &
 git clone --depth=1 https://github.com/jerrykuku/luci-app-argon-config package/luci-app-argon-config &
 git clone --depth=1 https://github.com/xiaoqingfengATGH/luci-theme-infinityfreedom package/luci-theme-infinityfreedom &
 git_sparse_clone main https://github.com/haiibo/packages luci-theme-atmaterial luci-theme-opentomcat luci-theme-netgear &
@@ -59,6 +59,11 @@ wait
 
 # 更改 Argon 主题背景
 cp -f $GITHUB_WORKSPACE/images/bg1.jpg package/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
+
+# 设置 Argon 为默认主题并启用暗黑模式
+uci set luci.main.mediaurlbase='/luci-static/argon'
+uci set argon_config.@global[0].mode='dark'
+uci commit argon_config
 
 # msd_lite
 git clone --depth=1 https://github.com/ximiTech/luci-app-msd_lite package/luci-app-msd_lite &
@@ -100,7 +105,7 @@ find package/*/ -maxdepth 2 -path "*/Makefile" | xargs -i sed -i 's/PKG_SOURCE_U
 find package/*/ -maxdepth 2 -path "*/Makefile" | xargs -i sed -i 's/PKG_SOURCE_URL:=@GHCODELOAD/PKG_SOURCE_URL:=https:\/\/codeload.github.com/g' {}
 
 # 取消主题默认设置
-find package/luci-theme-*/* -type f -name '*luci-theme-*' -print -exec sed -i '/set luci.main.mediaurlbase/d' {} \;
+# find package/luci-theme-*/* -type f -name '*luci-theme-*' -print -exec sed -i '/set luci.main.mediaurlbase/d' {} \; # 注释掉阻止默认主题设置的命令
 
 ./scripts/feeds update -a
 ./scripts/feeds install -a
