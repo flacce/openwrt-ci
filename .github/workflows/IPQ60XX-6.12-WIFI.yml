@@ -158,14 +158,7 @@ jobs:
         name: ${{ env.SOURCE_REPO }}-firmware-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE_PATH }}
 
-    - name: 🧹 清理旧的 Release
-      if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE == 'true'
-      uses: Nats-ji/delete-old-releases@v1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        keep-count: 5
-        keep-old-minor-releases: true
-        keep-old-minor-releases-count: 1
+
 
     - name: 🎉 发布固件
       if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE == 'true'
