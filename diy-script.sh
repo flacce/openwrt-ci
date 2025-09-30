@@ -47,6 +47,8 @@ git clone --depth=1 https://github.com/Jason6111/luci-app-netdata package/luci-a
 git clone --depth=1 https://github.com/EasyTier/luci-app-easytier.git package/luci-app-easytier &
 git_sparse_clone main https://github.com/Lienol/openwrt-package luci-app-filebrowser luci-app-ssr-mudb-server &
 git_sparse_clone master https://github.com/immortalwrt/luci applications/luci-app-eqos &
+# 科学上网插件
+git clone --depth=1 https://github.com/gdy666/luci-app-lucky package/luci-app-lucky &
 git clone --depth=1 https://github.com/VIKINGYFY/homeproxy package/luci-app-homeproxy &
 git clone --depth=1 https://github.com/ximiTech/luci-app-msd_lite package/luci-app-msd_lite &
 git clone --depth=1 https://github.com/ximiTech/msd_lite package/msd_lite &
