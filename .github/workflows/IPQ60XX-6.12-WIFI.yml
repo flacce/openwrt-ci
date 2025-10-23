@@ -149,7 +149,10 @@ jobs:
         if: steps.compile.outputs.status == 'success'
         run: |
           cd ${{ env.FIRMWARE_PATH }}
-          echo "list=$(grep -E 'CONFIG_PACKAGE_luci-app-.*=[ym]' build.config | sed -e 's/CONFIG_PACKAGE_//' -e 's/=[ym]$//' | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_OUTPUT
+          PLUGIN_LIST=$(grep -E 'CONFIG_PACKAGE_luci-app-.*=[ym]' build.config | sed -e 's/CONFIG_PACKAGE_//' -e 's/=[ym]$//' | sort | sed 's/^/- /')
+          echo "list<<EOF" >> $GITHUB_OUTPUT
+          echo "$PLUGIN_LIST" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: 📦 上传固件到 Artifact
         if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE != 'true'
@@ -181,4 +184,4 @@ jobs:
             - 固件编译前最后一次➦[主源码](${{ env.REPO_URL }})更新记录
             - ${{ env.VERSION_INFO }}
             ### 📦 已编译插件
-            `${{ steps.plugin_list.outputs.list }}`
+            ${{ steps.plugin_list.outputs.list }}
