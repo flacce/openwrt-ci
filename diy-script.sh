@@ -53,14 +53,13 @@ git clone --depth=1 https://github.com/VIKINGYFY/homeproxy package/luci-app-home
 git clone --depth=1 https://github.com/ximiTech/luci-app-msd_lite package/luci-app-msd_lite &
 git clone --depth=1 https://github.com/ximiTech/msd_lite package/msd_lite &
 git clone --depth=1 https://github.com/sbwml/luci-app-mosdns package/luci-app-mosdns &
-git_sparse_clone main https://github.com/haiibo/packages luci-app-onliner &
-
 # 主题
 git clone --depth=1 https://github.com/kiddin9/luci-theme-edge package/luci-theme-edge &
 git clone --depth=1 https://github.com/jerrykuku/luci-theme-argon package/luci-theme-argon &
 git clone --depth=1 https://github.com/jerrykuku/luci-app-argon-config package/luci-app-argon-config &
 git clone --depth=1 https://github.com/xiaoqingfengATGH/luci-theme-infinityfreedom package/luci-theme-infinityfreedom &
-git_sparse_clone main https://github.com/haiibo/packages luci-theme-atmaterial luci-theme-opentomcat luci-theme-netgear &
+git clone --depth=1 https://github.com/eamonxg/luci-theme-aurora.git package/luci-theme-aurora &
+git_sparse_clone main https://github.com/haiibo/packages luci-app-onliner luci-theme-atmaterial luci-theme-opentomato luci-theme-netgear &
 
 echo '等待软件包下载完成...'
 wait
@@ -68,11 +67,16 @@ wait
 
 # 4. 应用补丁和修复
 #-------------------------------------------------
+echo '正在更新和安装 Feeds...'
+./scripts/feeds update -a
+./scripts/feeds install -a
+
 echo '正在应用补丁和修复...'
 # 修改 Argon 主题背景
-cp -f $GITHUB_WORKSPACE/images/bg1.jpg package/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
+# cp -f $GITHUB_WORKSPACE/images/bg1.jpg package/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
 
 # 修复 hostapd 编译问题
+mkdir -p package/network/services/hostapd/patches
 cp -f $GITHUB_WORKSPACE/scripts/011-fix-mbo-modules-build.patch package/network/services/hostapd/patches/011-fix-mbo-modules-build.patch
 
 # 修复 armv8 设备 xfsprogs 编译问题
@@ -146,6 +150,3 @@ chmod 755 package/luci-app-onliner/root/usr/share/onliner/setnlbw.sh
 
 # 6. 完成
 #-------------------------------------------------
-echo '正在更新和安装 Feeds...'
-./scripts/feeds update -a
-./scripts/feeds install -a
