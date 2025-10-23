@@ -1,33 +1,41 @@
 # OpenWrt CI
 
 <p align="center">
-  <img width="500" src="https://github.com/openwrt/openwrt/blob/main/include/logo.png"/>
+  <a href="https://openwrt.org/" rel="noopener" target="_blank"><img width="500" src="https://github.com/openwrt/openwrt/raw/main/include/logo.png" alt="OpenWrt Logo"></a>
 </p>
 
 <p align="center">
-这是一个基于 GitHub Actions 的 OpenWrt 固件自动编译项目。
+  这是一个基于 GitHub Actions 的 OpenWrt 固件自动编译项目。
 </p>
 
 ---
 
 ## ✨ 固件特性
 
-- **默认管理地址**: `10.0.0.1`
-- **默认用户名**: `root`
-- **默认密码**: 无
+- **自动编译**: 每日自动更新、编译、发布最新版本的 OpenWrt 固件。
+- **多平台支持**: 支持 IPQ60XX, IPQ807X, 和 x86-64 等多种平台。
+- **高度定制**: 用户可以轻松 Fork 本仓库，通过修改配置文件和脚本来定制自己的专属固件。
+
+### 固件默认信息
+- **管理地址**: `192.168.1.1`
+- **用户名**: `root`
+- **密码**: `password`
 - **固件源码**: 基于 [LiBwrt/openwrt-6.x](https://github.com/LiBwrt/openwrt-6.x) (k6.17-dev 分支)
 
 ---
 
 ## 🚀 固件下载
 
-下表中的链接指向最新的构建状态和固件下载页面。请点击对应的徽章查看。
+下表列出了当前支持的设备及其固件。点击 "编译状态" 查看最新的构建日志，点击 "固件下载" 跳转到 Releases 页面获取固件。
 
-| 目标平台 | 编译状态 | 固件下载 |
-| :---: | :---: | :---: |
-| **IPQ60XX (WIFI)** | [![IPQ60XX-6.12-WIFI](https://github.com/flacce/openwrt-ci/actions/workflows/IPQ60XX-6.12-WIFI.yml/badge.svg)](https://github.com/flacce/openwrt-ci/actions/workflows/IPQ60XX-6.12-WIFI.yml) | [Releases](https://github.com/flacce/openwrt-ci/releases) |
+| 设备平台 | 配置文件 | 编译状态 | 固件下载 |
+| :--- | :--- | :--- | :--- |
+| **京东云 亚瑟 / 雅典娜 (IPQ60XX)** | [`ipq60xx-6.12-wifi.config`](configs/ipq60xx-6.12-wifi.config) | [![IPQ60XX-6.12-WIFI](https://github.com/flacce/openwrt-ci/actions/workflows/IPQ60XX-6.12-WIFI.yml/badge.svg)](https://github.com/flacce/openwrt-ci/actions/workflows/IPQ60XX-6.12-WIFI.yml) | [Releases](https://github.com/flacce/openwrt-ci/releases) |
 
-*（您可以根据需要，按照以上格式添加更多平台的固件信息。）*
+> [!NOTE]
+> **固件区分**:
+> - 文件名中包含 `01` 的固件适用于 **京东云 亚瑟**。
+> - 文件名中包含 `02` 的固件适用于 **京东云 雅典娜**。
 
 ---
 
@@ -52,12 +60,15 @@
 5.  **下载固件**  
     等待编译完成（通常需要1-2小时），完成后在仓库主页的 `Releases` 页面即可找到您新鲜出炉的固件。
 
+> [!TIP]
+> 如果您不熟悉 OpenWrt 的 `.config` 文件，可以参考恩山论坛的这篇帖子：[Applications 添加插件应用说明](https://www.right.com.cn/forum/thread-3682029-1-1.html)。
+
 ---
 
 ## ⚠️ 免责声明
 
 - 本人不对任何人因使用本固件所遭受的任何理论或实际的损失承担责任。
-- 本固件禁止用于任何商业用途，请务- 务必严格遵守国家互联网使用相关法律规定。
+- 本固件禁止用于任何商业用途，请务必严格遵守国家互联网使用相关法律规定。
 
 ---
 
@@ -67,3 +78,7 @@
 - [LiBwrt](https://github.com/LiBwrt-op/openwrt-6.x)
 - [immortalwrt](https://github.com/immortalwrt/immortalwrt)
 - 以及所有为 OpenWrt 社区做出贡献的人们。
+
+<a href="#readme">
+<img src="https://img.shields.io/badge/-返回顶部-FFFFFF.svg" title="返回顶部" align="right"/>
+</a>
