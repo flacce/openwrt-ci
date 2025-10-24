@@ -60,6 +60,7 @@ jobs:
       - name: 📥 克隆源代码
         run: |
           df -hT $GITHUB_WORKSPACE
+          rm -rf openwrt # 确保每次克隆都在一个干净的目录
           git clone --depth 1 -b $REPO_BRANCH $REPO_URL openwrt
           cd openwrt
           echo "OPENWRT_PATH=$PWD" >> $GITHUB_ENV
