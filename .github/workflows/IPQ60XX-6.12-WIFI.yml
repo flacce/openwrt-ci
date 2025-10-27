@@ -41,8 +41,11 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           sudo apt -y update
-          sudo apt full-upgrade -y
           sudo apt install git wget curl tar unzip
+          git clone --depth 1 -b k6.18-dev https://github.com/LiBwrt/openwrt-6.x.git libwrt
+          pwd
+          cd libwrt
+          pwd
           sudo systemctl daemon-reload
           sudo apt -y autoremove --purge
           sudo apt -y clean
