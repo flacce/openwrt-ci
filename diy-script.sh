@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #=================================================
 # OpenWrt DIY 脚本
 #=================================================
@@ -16,21 +15,21 @@ function git_sparse_clone() {
   cd .. && rm -rf $repodir
 }
 
-
 # 2. 清理冲突的软件包
 #-------------------------------------------------
 echo '正在清理冲突的软件包...'
-rm -rf feeds/packages/net/mosdns
-rm -rf feeds/packages/net/msd_lite
-rm -rf feeds/packages/net/smartdns
-rm -rf feeds/luci/themes/luci-theme-argon
-rm -rf feeds/luci/themes/luci-theme-netgear
-rm -rf feeds/luci/applications/luci-app-mosdns
-rm -rf feeds/luci/applications/luci-app-netdata
-rm -rf feeds/luci/applications/luci-app-serverchan
-rm -rf feeds/packages/utils/domoticz
-rm -rf feeds/packages/net/i2pd
-rm -rf feeds/packages/net/kea
+rm -rf \
+  feeds/packages/net/mosdns \
+  feeds/packages/net/msd_lite \
+  feeds/packages/net/smartdns \
+  feeds/luci/themes/luci-theme-argon \
+  feeds/luci/themes/luci-theme-netgear \
+  feeds/luci/applications/luci-app-mosdns \
+  feeds/luci/applications/luci-app-netdata \
+  feeds/luci/applications/luci-app-serverchan \
+  feeds/packages/utils/domoticz \
+  feeds/packages/net/i2pd \
+  feeds/packages/net/kea
 
 
 # 3. 添加额外的软件包
@@ -54,9 +53,6 @@ git clone --depth=1 https://github.com/ximiTech/luci-app-msd_lite package/luci-a
 git clone --depth=1 https://github.com/ximiTech/msd_lite package/msd_lite &
 git clone --depth=1 https://github.com/sbwml/luci-app-mosdns package/luci-app-mosdns &
 # 主题
-git clone --depth=1 https://github.com/kiddin9/luci-theme-edge package/luci-theme-edge &
-git clone --depth=1 https://github.com/jerrykuku/luci-theme-argon package/luci-theme-argon &
-git clone --depth=1 https://github.com/jerrykuku/luci-app-argon-config package/luci-app-argon-config &
 git clone --depth=1 https://github.com/xiaoqingfengATGH/luci-theme-infinityfreedom package/luci-theme-infinityfreedom &
 git clone --depth=1 https://github.com/eamonxg/luci-theme-aurora.git package/luci-theme-aurora &
 git_sparse_clone main https://github.com/haiibo/packages luci-app-onliner luci-theme-atmaterial luci-theme-opentomato luci-theme-netgear &
@@ -70,10 +66,6 @@ wait
 echo '正在更新和安装 Feeds...'
 ./scripts/feeds update -a
 ./scripts/feeds install -a
-
-echo '正在应用补丁和修复...'
-# 修改 Argon 主题背景
-# cp -f $GITHUB_WORKSPACE/images/bg1.jpg package/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
 
 # 修复 hostapd 编译问题
 mkdir -p package/network/services/hostapd/patches
@@ -93,18 +85,22 @@ date_version=$(date +"%y.%m.%d")
 sed -i "s/DISTRIB_REVISION='.*'/DISTRIB_REVISION='R${date_version} by Haiibo'/" package/lean/default-settings/files/zzz-default-settings
 
 # 修正软件包的 Makefile
-find package/*/ -maxdepth 2 -path "*/Makefile" | xargs -i sed -i 's/..\/..\/luci.mk/$(TOPDIR)\/feeds\/luci\/luci.mk/g' {}
-find package/*/ -maxdepth 2 -path "*/Makefile" | xargs -i sed -i 's/..\/..\/lang\/golang\/golang-package.mk/$(TOPDIR)\/feeds\/packages\/lang\/golang\/golang-package.mk/g' {}
-find package/*/ -maxdepth 2 -path "*/Makefile" | xargs -i sed -i 's/PKG_SOURCE_URL:=@GHREPO/PKG_SOURCE_URL:=https:\/\/github.com/g' {}
-find package/*/ -maxdepth 2 -path "*/Makefile" | xargs -i sed -i 's/PKG_SOURCE_URL:=@GHCODELOAD/PKG_SOURCE_URL:=https:\/\/codeload.github.com/g' {}
+find package/*/ -maxdepth 2 -path "*/Makefile" | xargs -I {} sed -i 's/../../luci.mk/$(TOPDIR)/feeds/luci/luci.mk/g' {}
+find package/*/ -maxdepth 2 -path "*/Makefile" | xargs -I {} sed -i 's/../../lang/golang/golang-package.mk/$(TOPDIR)/feeds/packages/lang/golang/golang-package.mk/g' {}
+find package/*/ -maxdepth 2 -path "*/Makefile" | xargs -I {} sed -i 's/PKG_SOURCE_URL:=@GHREPO/PKG_SOURCE_URL:=https:\/\/github.com/g' {}
+find package/*/ -maxdepth 2 -path "*/Makefile" | xargs -I {} sed -i 's/PKG_SOURCE_URL:=@GHCODELOAD/PKG_SOURCE_URL:=https:\/\/codeload.github.com/g' {}
 
 
 # 5. 设置系统默认值 (uci-defaults)
 #-------------------------------------------------
 echo '正在设置系统默认值...'
 # 设置不同设备的 LAN 口 IP
+mkdir -p \
+  files/jdcloud_re-cs-02/etc/uci-defaults \
+  files/jdcloud_re-ss-01/etc/uci-defaults \
+  files/etc/uci-defaults
+
 # RE-CS-02 (02) -> 10.0.0.1
-mkdir -p files/jdcloud_re-cs-02/etc/uci-defaults
 cat > files/jdcloud_re-cs-02/etc/uci-defaults/99-set-lan-ip <<EOF
 #!/bin/sh
 uci set network.lan.ipaddr='10.0.0.1'
@@ -114,7 +110,6 @@ EOF
 chmod +x files/jdcloud_re-cs-02/etc/uci-defaults/99-set-lan-ip
 
 # RE-SS-01 (01) -> 10.0.1.1
-mkdir -p files/jdcloud_re-ss-01/etc/uci-defaults
 cat > files/jdcloud_re-ss-01/etc/uci-defaults/99-set-lan-ip <<EOF
 #!/bin/sh
 uci set network.lan.ipaddr='10.0.1.1'
@@ -123,17 +118,6 @@ exit 0
 EOF
 chmod +x files/jdcloud_re-ss-01/etc/uci-defaults/99-set-lan-ip
 
-# 设置默认主题和暗黑模式
-mkdir -p files/etc/uci-defaults
-cat > files/etc/uci-defaults/98-set-theme <<EOF
-#!/bin/sh
-uci set luci.main.mediaurlbase='/luci-static/argon'
-uci set argon_config.@global[0].mode='dark'
-uci commit luci
-uci commit argon_config
-exit 0
-EOF
-chmod +x files/etc/uci-defaults/98-set-theme
 
 # 设置 nlbwmon 刷新间隔
 cat > files/etc/uci-defaults/97-set-nlbwmon <<EOF
@@ -147,6 +131,16 @@ chmod +x files/etc/uci-defaults/97-set-nlbwmon
 # 启用 nlbwmon 的脚本
 chmod 755 package/luci-app-onliner/root/usr/share/onliner/setnlbw.sh
 
-
-# 6. 完成
-#-------------------------------------------------
+# 高通平台调整
+DTS_PATH="./target/linux/qualcommax/files/arch/arm64/boot/dts/qcom/"
+if [[ "${WRT_TARGET^^}" == *"QUALCOMMAX"* ]]; then
+	#取消nss相关feed
+	echo "CONFIG_FEED_nss_packages=n" >> ./.config
+	echo "CONFIG_FEED_sqm_scripts_nss=n" >> ./.config
+	#开启sqm-nss插件
+	echo "CONFIG_PACKAGE_luci-app-sqm=y" >> ./.config
+	echo "CONFIG_PACKAGE_sqm-scripts-nss=y" >> ./.config
+	#设置NSS版本
+	echo "CONFIG_NSS_FIRMWARE_VERSION_11_4=n" >> ./.config
+	echo "CONFIG_NSS_FIRMWARE_VERSION_12_5=y" >> ./.config
+fi

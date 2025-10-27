@@ -11,4 +11,9 @@ uci commit luci
 # uci set fstab.@global[0].check_fs=1
 # uci commit fstab
 
+uci set network.@device[0].packet_steering=0
+uci set network.@device[0].flow_offloading=0
+uci set network.@device[0].flow_offloading_hw=0
+uci commit network
+
 exit 0
