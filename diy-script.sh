@@ -29,14 +29,15 @@ rm -rf \
   feeds/luci/applications/luci-app-serverchan \
   feeds/packages/utils/domoticz \
   feeds/packages/net/i2pd \
-  feeds/packages/net/kea
+  feeds/packages/net/kea \
+  package/emortal/luci-app-athena-led
 
 
 # 3. 添加额外的软件包
 #-------------------------------------------------
 echo '正在添加额外的软件包...'
 # 插件
-git clone --depth=1 https://github.com/NONGFAH/luci-app-athena-led package/luci-app-athena-led &
+
 git clone --depth=1 https://github.com/kongfl888/luci-app-adguardhome package/luci-app-adguardhome &
 git clone --depth=1 -b openwrt-18.06 https://github.com/tty228/luci-app-wechatpush package/luci-app-serverchan &
 git clone --depth=1 https://github.com/ilxp/luci-app-ikoolproxy package/luci-app-ikoolproxy &
@@ -59,6 +60,9 @@ git_sparse_clone main https://github.com/haiibo/packages luci-app-onliner luci-t
 
 echo '等待软件包下载完成...'
 wait
+
+git clone --depth=1 https://github.com/NONGFAH/luci-app-athena-led package/luci-app-athena-led
+chmod +x package/luci-app-athena-led/root/etc/init.d/athena_led package/luci-app-athena-led/root/usr/sbin/athena-led
 
 
 # 4. 应用补丁和修复
